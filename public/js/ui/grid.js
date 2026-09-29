@@ -13,7 +13,7 @@ export function createGrid({ gridEl, engine, handlers }) {
   /** @type {Map<string, object>} itemId -> button */
   const buttons = new Map();
 
-  function render(tab, items) {
+  function render(tab, items, itemTabOf = (item) => tab, emptyMessage = 'No sounds in this tab yet. Drop audio files into the library folder.') {
     // Remove buttons for items no longer present.
     const present = new Set(items.map((i) => i.id));
     for (const [id, btn] of buttons) {
@@ -25,7 +25,7 @@ export function createGrid({ gridEl, engine, handlers }) {
 
     // Add/update in order (appendChild moves existing nodes into place).
     if (items.length === 0) {
-      gridEl.innerHTML = '<div class="empty">No sounds in this tab yet. Drop audio files into the library folder.</div>';
+      gridEl.innerHTML = `<div class="empty">${emptyMessage}</div>`;
       return;
     }
     const empty = gridEl.querySelector('.empty');
@@ -34,7 +34,7 @@ export function createGrid({ gridEl, engine, handlers }) {
     for (const item of items) {
       let btn = buttons.get(item.id);
       if (!btn) {
-        btn = createButton({ item, tab, engine, ...handlers });
+        btn = createButton({ item, tab: itemTabOf(item), engine, ...handlers });
         buttons.set(item.id, btn);
       } else {
         btn.update(item);

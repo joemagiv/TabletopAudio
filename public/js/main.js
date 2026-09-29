@@ -7,6 +7,21 @@ import { createMasterBar } from './ui/masterBar.js';
 import { createSettingsSheet } from './ui/settingsSheet.js';
 import { requestWakeLock, initWakeLockOnVisibility } from './util/wakeLock.js';
 
+// Virtual "Favorites" tab. It is client-only (no backing folder), so audio
+// files can never be dropped directly into it; it merely mirrors items that
+// the user has starred from other tabs.
+const FAV_TAB_ID = '__favorites__';
+const FAV_TAB = {
+  id: FAV_TAB_ID,
+  label: 'Favorites',
+  icon: '⭐',
+  color: '#f59e0b',
+  type: 'sfx',
+  exclusive: false,
+  items: [],
+};
+const FAV_EMPTY_MSG = 'No favorites yet. Tap the ★ on any sound to add it here.';
+
 const engine = createEngine();
 
 const dom = {
@@ -43,9 +58,44 @@ function findItem(id) {
   return null;
 }
 
+/** Return the item and its owning tab for a given id (or null). */
+function findItemAndTab(id) {
+  const lib = state.getState().library;
+  if (!lib) return null;
+  for (const t of lib.tabs) {
+    for (const it of t.items) if (it.id === id) return { item: it, tab: t };
+  }
+  return null;
+}
+
+/** Items in library order whose ids are in the favorites set. */
+function getFavoriteItems() {
+  const favs = new Set(state.getFavorites());
+  const lib = state.getState().library;
+  const out = [];
+  if (!lib) return out;
+  for (const t of lib.tabs) {
+    for (const it of t.items) if (favs.has(it.id)) out.push(it);
+  }
+  return out;
+}
+
+/** Combined tab list shown in the tab bar (Favorites first, then real tabs). */
+function getTabList() {
+  const lib = state.getState().library;
+  if (!lib) return [FAV_TAB];
+  const sorted = [...lib.tabs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return [FAV_TAB, ...sorted];
+}
+
 function getActiveTab() {
   const lib = state.getState().library;
-  if (!lib || !lib.tabs.length) return null;
+  if (!lib || !lib.tabs.length) {
+    // Keep the Favorites tab reachable if it has any entries.
+    if (state.getFavorites().length) return FAV_TAB;
+    return null;
+  }
+  if (state.getState().activeTabId === FAV_TAB_ID) return FAV_TAB;
   return lib.tabs.find((t) => t.id === state.getState().activeTabId) || lib.tabs[0];
 }
 
@@ -56,8 +106,19 @@ function renderActive() {
     grid.render(null, []);
     return;
   }
-  tabs.render(lib.tabs, tab.id);
-  grid.render(tab, tab.items);
+  tabs.render(getTabList(), tab.id);
+  if (tab.id === FAV_TAB_ID) {
+    // Favorites mirror real items but keep each one's original tab (color, type).
+    const items = getFavoriteItems();
+    grid.render(
+      FAV_TAB,
+      items,
+      (it) => findItemAndTab(it.id)?.tab || FAV_TAB,
+      FAV_EMPTY_MSG
+    );
+  } else {
+    grid.render(tab, tab.items);
+  }
 }
 
 // ---------- UI modules ----------
@@ -65,7 +126,13 @@ const tabs = createTabs({ tabsEl: dom.tabs, onSelect: selectTab });
 const grid = createGrid({
   gridEl: dom.grid,
   engine,
-  handlers: { onToggleLoop, onOpenSettings, onTap: handleTap },
+  handlers: {
+    onToggleLoop,
+    onOpenSettings,
+    onTap: handleTap,
+    isFavorite: (id) => state.isFavorite(id),
+    onToggleFavorite,
+  },
 });
 const master = createMasterBar({
   el: dom.master,
@@ -98,6 +165,17 @@ function onOpenSettings(item) {
   settingsItemId = item.id;
   state.openSettings(item.id);
   sheet.open(item);
+}
+
+function onToggleFavorite(item) {
+  const nowFav = state.toggleFavorite(item.id);
+  // If we're looking at the Favorites tab, the grid must reflow to add/remove
+  // this button. Otherwise the (single, visible) source button updates its own
+  // star via setFavorite().
+  if (state.getState().activeTabId === FAV_TAB_ID) {
+    renderActive();
+  }
+  return nowFav;
 }
 
 function handleTap(item, tab) {
@@ -211,7 +289,10 @@ async function loadLibrary() {
   try {
     const lib = await api.fetchLibrary();
     state.setLibrary(lib);
-    if (!lib.tabs.find((t) => t.id === state.getState().activeTabId) && lib.tabs.length) {
+    state.pruneFavorites(lib);
+    const active = state.getState().activeTabId;
+    const activeExists = active === FAV_TAB_ID || lib.tabs.find((t) => t.id === active);
+    if (!activeExists && lib.tabs.length) {
       state.setActiveTab(lib.tabs[0].id);
     }
     renderActive();

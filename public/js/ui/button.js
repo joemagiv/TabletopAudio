@@ -11,8 +11,10 @@ import { attachLongPress } from '../util/longPress.js';
  * @param {(item:object)=>void} opts.onToggleLoop
  * @param {(item:object)=>void} opts.onOpenSettings
  * @param {(item:object, tab:object)=>void} opts.onTap
+ * @param {(id:string)=>boolean} [opts.isFavorite]
+ * @param {(item:object)=>boolean} [opts.onToggleFavorite]
  */
-export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, onTap }) {
+export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, onTap, isFavorite, onToggleFavorite }) {
   const el = document.createElement('button');
   el.className = 'btn';
   el.type = 'button';
@@ -25,6 +27,14 @@ export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, 
   const badge = document.createElement('div');
   badge.className = 'state-badge';
   badge.textContent = '▶';
+
+  const fav = document.createElement('span');
+  fav.className = 'fav';
+  fav.role = 'button';
+  fav.tabIndex = 0;
+  fav.textContent = '☆';
+  fav.title = 'Toggle favorite';
+  fav.setAttribute('aria-label', `Toggle favorite for ${item.label}`);
 
   const loop = document.createElement('span');
   loop.className = 'loop';
@@ -44,7 +54,7 @@ export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, 
   warn.className = 'warn';
   warn.textContent = '⚠';
 
-  el.append(scrim, badge, loop, label, progress, warn);
+  el.append(scrim, badge, fav, loop, label, progress, warn);
 
   function applyArt(it) {
     if (it.artUrl) {
@@ -55,6 +65,13 @@ export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, 
       el.classList.add('no-art');
     }
   }
+
+  function setFavorite(on) {
+    fav.classList.toggle('on', on);
+    fav.textContent = on ? '★' : '☆';
+    fav.setAttribute('aria-pressed', String(on));
+  }
+  setFavorite(isFavorite ? !!isFavorite(item.id) : false);
 
   function updateAria() {
     const playing = engine.isPlaying(item.id);
@@ -81,6 +98,23 @@ export function createButton({ item, tab, engine, onToggleLoop, onOpenSettings, 
       e.preventDefault();
       e.stopPropagation();
       onToggleLoop(item);
+    }
+  });
+
+  // Favorite star: stop propagation so it never triggers playback or the
+  // long-press "open settings" gesture.
+  fav.addEventListener('pointerdown', (e) => e.stopPropagation());
+  fav.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const on = onToggleFavorite ? onToggleFavorite(item) : !fav.classList.contains('on');
+    setFavorite(on);
+  });
+  fav.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      const on = onToggleFavorite ? onToggleFavorite(item) : !fav.classList.contains('on');
+      setFavorite(on);
     }
   });
 

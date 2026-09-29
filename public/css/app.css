@@ -206,6 +206,28 @@ body {
   color: #fff;
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
 }
+.btn .fav {
+  position: absolute;
+  top: 8px;
+  right: 60px; /* sits just left of the loop chip (top-right) */
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--text-dim);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn .fav.on {
+  color: #fbbf24;
+  text-shadow: 0 0 8px color-mix(in srgb, #fbbf24 70%, transparent);
+}
 .btn .state-badge {
   position: absolute;
   top: 8px;

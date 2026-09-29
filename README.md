@@ -1,7 +1,6 @@
 # Tabletop Soundboard
 
-A self-hosted, web-based soundboard for running **Dungeons & Dragons** (or any
-tabletop) sessions. Run a tiny server on the computer that holds your audio,
+A self-hosted, web-based soundboard for running Tabletop Roleplaying sessions. Run a tiny server on the computer that holds your audio,
 open the web UI on a tablet or phone on the same Wi-Fi, and tap big buttons to
 play music, ambience, and sound effects — all at once.
 

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1"
+    />
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Soundboard" />
+    <title>Tabletop Soundboard</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/css/app.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="tabbar" class="tabbar" aria-label="Soundboard tabs">
+        <nav id="tabs" class="tabs" aria-label="Tabs"></nav>
+        <div class="tabbar-actions">
+          <button id="rescan-btn" class="icon-btn" title="Rescan library" aria-label="Rescan library">⟳</button>
+          <button id="settings-global-btn" class="icon-btn" title="About / settings" aria-label="About">⚙</button>
+        </div>
+      </header>
+
+      <main id="grid" class="grid" aria-label="Sound buttons"></main>
+
+      <footer id="masterbar" class="masterbar" aria-label="Master controls"></footer>
+    </div>
+
+    <!-- Bottom sheet for per-item settings -->
+    <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
+    <section id="settings-sheet" class="sheet" role="dialog" aria-modal="true" aria-label="Item settings" hidden></section>
+
+    <!-- Unlock overlay (audio needs a user gesture) -->
+    <div id="unlock-overlay" class="unlock-overlay">
+      <div class="unlock-card">
+        <div class="unlock-icon">🎵</div>
+        <h1>Tabletop Soundboard</h1>
+        <p>Tap anywhere to enable audio, then start your session.</p>
+        <button id="unlock-btn" class="unlock-btn">Tap to Start</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

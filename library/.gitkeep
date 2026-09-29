@@ -1,0 +1,2 @@
+# This file keeps the library folder in git. Audio files are gitignored.
+# Drop audio into subfolders (Music/, Ambience/, SFX/, ...) to create tabs.
